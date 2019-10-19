@@ -1,4 +1,4 @@
-package alertatest
+package alertmanagertest
 
 import (
 	"encoding/json"

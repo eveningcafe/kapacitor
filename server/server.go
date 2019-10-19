@@ -23,7 +23,7 @@ import (
 	"github.com/influxdata/kapacitor/keyvalue"
 	"github.com/influxdata/kapacitor/server/vars"
 	"github.com/influxdata/kapacitor/services/alert"
-	"github.com/influxdata/kapacitor/services/alerta"
+	"github.com/influxdata/kapacitor/services/alertmanager"
 	"github.com/influxdata/kapacitor/services/azure"
 	"github.com/influxdata/kapacitor/services/config"
 	"github.com/influxdata/kapacitor/services/consul"
@@ -759,13 +759,13 @@ func (s *Server) appendKafkaService() {
 func (s *Server) appendAlertaService() {
 	c := s.config.Alerta
 	d := s.DiagService.NewAlertaHandler()
-	srv := alerta.NewService(c, d)
+	srv := alertmanager.NewService(c, d)
 
 	s.TaskMaster.AlertaService = srv
 	s.AlertService.AlertaService = srv
 
-	s.SetDynamicService("alerta", srv)
-	s.AppendService("alerta", srv)
+	s.SetDynamicService("alertmanager", srv)
+	s.AppendService("alertmanager", srv)
 }
 
 func (s *Server) appendTalkService() {

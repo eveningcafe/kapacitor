@@ -13,7 +13,7 @@ import (
 
 	"github.com/influxdata/kapacitor/command"
 	"github.com/influxdata/kapacitor/services/alert"
-	"github.com/influxdata/kapacitor/services/alerta"
+	"github.com/influxdata/kapacitor/services/alertmanager"
 	"github.com/influxdata/kapacitor/services/azure"
 	"github.com/influxdata/kapacitor/services/config"
 	"github.com/influxdata/kapacitor/services/consul"
@@ -85,14 +85,14 @@ type Config struct {
 	UDP      []udp.Config      `toml:"udp"`
 
 	// Alert handlers
-	Alerta     alerta.Config     `toml:"alerta" override:"alerta"`
-	HipChat    hipchat.Config    `toml:"hipchat" override:"hipchat"`
-	Kafka      kafka.Configs     `toml:"kafka" override:"kafka,element-key=id"`
-	MQTT       mqtt.Configs      `toml:"mqtt" override:"mqtt,element-key=name"`
-	OpsGenie   opsgenie.Config   `toml:"opsgenie" override:"opsgenie"`
-	OpsGenie2  opsgenie2.Config  `toml:"opsgenie2" override:"opsgenie2"`
-	PagerDuty  pagerduty.Config  `toml:"pagerduty" override:"pagerduty"`
-	PagerDuty2 pagerduty2.Config `toml:"pagerduty2" override:"pagerduty2"`
+	Alerta     alertmanager.Config `toml:"alertmanager" override:"alertmanager"`
+	HipChat    hipchat.Config      `toml:"hipchat" override:"hipchat"`
+	Kafka      kafka.Configs       `toml:"kafka" override:"kafka,element-key=id"`
+	MQTT       mqtt.Configs        `toml:"mqtt" override:"mqtt,element-key=name"`
+	OpsGenie   opsgenie.Config     `toml:"opsgenie" override:"opsgenie"`
+	OpsGenie2  opsgenie2.Config    `toml:"opsgenie2" override:"opsgenie2"`
+	PagerDuty  pagerduty.Config    `toml:"pagerduty" override:"pagerduty"`
+	PagerDuty2 pagerduty2.Config   `toml:"pagerduty2" override:"pagerduty2"`
 	Pushover   pushover.Config   `toml:"pushover" override:"pushover"`
 	HTTPPost   httppost.Configs  `toml:"httppost" override:"httppost,element-key=endpoint"`
 	SMTP       smtp.Config       `toml:"smtp" override:"smtp"`
@@ -154,7 +154,7 @@ func NewConfig() *Config {
 	c.Collectd = collectd.NewConfig()
 	c.OpenTSDB = opentsdb.NewConfig()
 
-	c.Alerta = alerta.NewConfig()
+	c.Alerta = alertmanager.NewConfig()
 	c.HipChat = hipchat.NewConfig()
 	c.Kafka = kafka.Configs{kafka.NewConfig()}
 	c.MQTT = mqtt.Configs{mqtt.NewConfig()}
@@ -270,7 +270,7 @@ func (c *Config) Validate() error {
 
 	// Validate alert handlers
 	if err := c.Alerta.Validate(); err != nil {
-		return errors.Wrap(err, "alerta")
+		return errors.Wrap(err, "alertmanager")
 	}
 	if err := c.HipChat.Validate(); err != nil {
 		return errors.Wrap(err, "hipchat")

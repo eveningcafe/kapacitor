@@ -16,7 +16,7 @@ import (
 	"github.com/influxdata/kapacitor/keyvalue"
 	"github.com/influxdata/kapacitor/models"
 	alertservice "github.com/influxdata/kapacitor/services/alert"
-	"github.com/influxdata/kapacitor/services/alerta"
+	"github.com/influxdata/kapacitor/services/alertmanager"
 	"github.com/influxdata/kapacitor/services/ec2"
 	"github.com/influxdata/kapacitor/services/hipchat"
 	"github.com/influxdata/kapacitor/services/httppost"
@@ -377,7 +377,7 @@ type AlertaHandler struct {
 	l Logger
 }
 
-func (h *AlertaHandler) WithContext(ctx ...keyvalue.T) alerta.Diagnostic {
+func (h *AlertaHandler) WithContext(ctx ...keyvalue.T) alertmanager.Diagnostic {
 	fields := logFieldsFromContext(ctx)
 
 	return &AlertaHandler{

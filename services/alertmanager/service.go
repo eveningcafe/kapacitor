@@ -1,4 +1,4 @@
-package alerta
+package alertmanager
 
 import (
 	"bytes"
@@ -25,7 +25,6 @@ const (
 	defaultEvent       = "{{ .ID }}"
 	defaultGroup       = "{{ .Group }}"
 	defaultTimeout     = time.Duration(24 * time.Hour)
-	defaultTokenPrefix = "Bearer"
 )
 
 type Diagnostic interface {
@@ -51,6 +50,24 @@ func NewService(c Config, d Diagnostic) *Service {
 	return s
 }
 
+type AlertmanagerRequest struct {
+	Status string `json:"status"`
+	Labels struct {
+		Instance    string   `json:"instance"`
+		Event       string   `json:"event"`
+		Environment string   `json:"environment"`
+		Origin      string   `json:"origin"`
+		Service     []string `json:"service"`
+		Group       string   `json:"group"`
+		Customer    string   `json:"customer"`
+	} `json:"labels"`
+	Annotations struct {
+		Summary  string    `json:"summary"`
+		Value    time.Time `json:"value"`
+		Severity string    `json:"severity"`
+	} `json:"annotations"`
+}
+
 type testOptions struct {
 	Resource    string   `json:"resource"`
 	Event       string   `json:"event"`
@@ -73,7 +90,7 @@ func (s *Service) TestOptions() interface{} {
 		Severity:    "critical",
 		Group:       "testGroup",
 		Value:       "testValue",
-		Message:     "test alerta message",
+		Message:     "test alertmanager message",
 		Origin:      c.Origin,
 		Service:     []string{"testServiceA", "testServiceB"},
 		Timeout:     "24h0m0s",
@@ -85,11 +102,8 @@ func (s *Service) Test(options interface{}) error {
 	if !ok {
 		return fmt.Errorf("unexpected options type %T", options)
 	}
-	c := s.config()
 	timeout, _ := time.ParseDuration(o.Timeout)
 	return s.Alert(
-		c.Token,
-		c.TokenPrefix,
 		o.Resource,
 		o.Event,
 		o.Environment,
@@ -133,12 +147,12 @@ func (s *Service) Update(newConfig []interface{}) error {
 	return nil
 }
 
-func (s *Service) Alert(token, tokenPrefix, resource, event, environment, severity, group, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) error {
+func (s *Service) Alert(resource, event, environment, severity, group, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) error {
 	if resource == "" || event == "" {
 		return errors.New("Resource and Event are required to send an alert")
 	}
 
-	req, err := s.preparePost(token, tokenPrefix, resource, event, environment, severity, group, value, message, origin, service, timeout, tags, data)
+	req, err := s.preparePost(resource, event, environment, severity, group, value, message, origin, service, timeout, tags, data)
 	if err != nil {
 		return err
 	}
@@ -157,7 +171,7 @@ func (s *Service) Alert(token, tokenPrefix, resource, event, environment, severi
 		type response struct {
 			Message string `json:"message"`
 		}
-		r := &response{Message: fmt.Sprintf("failed to understand Alerta response. code: %d content: %s", resp.StatusCode, string(body))}
+		r := &response{Message: fmt.Sprintf("failed to understand Alertmanager response. code: %d content: %s", resp.StatusCode, string(body))}
 		b := bytes.NewReader(body)
 		dec := json.NewDecoder(b)
 		dec.Decode(r)
@@ -166,23 +180,11 @@ func (s *Service) Alert(token, tokenPrefix, resource, event, environment, severi
 	return nil
 }
 
-func (s *Service) preparePost(token, tokenPrefix, resource, event, environment, severity, group, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) (*http.Request, error) {
+func (s *Service) preparePost( resource, event, environment, severity, group, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) (*http.Request, error) {
 	c := s.config()
 
 	if !c.Enabled {
 		return nil, errors.New("service is not enabled")
-	}
-
-	if token == "" {
-		token = c.Token
-	}
-
-	if tokenPrefix == "" {
-		if c.TokenPrefix == "" {
-			tokenPrefix = defaultTokenPrefix
-		} else {
-			tokenPrefix = c.TokenPrefix
-		}
 	}
 
 	if environment == "" {
@@ -199,36 +201,44 @@ func (s *Service) preparePost(token, tokenPrefix, resource, event, environment, 
 	}
 	u.Path = path.Join(u.Path, "alert")
 
-	postData := make(map[string]interface{})
-	postData["resource"] = resource
-	postData["event"] = event
-	postData["environment"] = environment
-	postData["severity"] = severity
-	postData["group"] = group
-	postData["value"] = value
-	postData["text"] = message
-	postData["origin"] = origin
-	postData["rawData"] = data
-	if len(service) > 0 {
-		postData["service"] = service
-	}
-	postData["timeout"] = int64(timeout / time.Second)
+	//postData := make(map[string]interface{})
+	//postData["resource"] = resource
+	//postData["event"] = event
+	//postData["environment"] = environment
+	//postData["severity"] = severity
+	//postData["group"] = group
+	//postData["value"] = value
+	//postData["text"] = message
+	//postData["origin"] = origin
+	//postData["rawData"] = data
+	//if len(service) > 0 {
+	//	postData["service"] = service
+	//}
+	//postData["timeout"] = int64(timeout / time.Second)
+	//
+	//tagList := make([]string, 0)
+	//for k, v := range tags {
+	//	tagList = append(tagList, fmt.Sprintf("%s=%s", k, v))
+	//}
+	//postData["tags"] = tagList
+	//
+	//var post bytes.Buffer
+	//enc := json.NewEncoder(&post)
+	//err = enc.Encode(postData)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	tagList := make([]string, 0)
-	for k, v := range tags {
-		tagList = append(tagList, fmt.Sprintf("%s=%s", k, v))
-	}
-	postData["tags"] = tagList
-
-	var post bytes.Buffer
-	enc := json.NewEncoder(&post)
-	err = enc.Encode(postData)
+	//req, err := http.NewRequest("POST", u.String(), &post)
+	bodyData := AlertmanagerRequest{}
+	bodyData.Status
+	jsonBody, err := json.Marshal([]AlertmanagerRequest{bodyData})
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", u.String(), &post)
-	req.Header.Add("Authorization", tokenPrefix+" "+token)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(jsonBody))
+
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return nil, err
@@ -238,47 +248,39 @@ func (s *Service) preparePost(token, tokenPrefix, resource, event, environment, 
 }
 
 type HandlerConfig struct {
-	// Alerta authentication token.
-	// If empty uses the token from the configuration.
-	Token string `mapstructure:"token"`
-
-	// Alerta authentication token prefix.
-	// If empty uses Bearer.
-	TokenPrefix string `mapstructure:"token-prefix"`
-
-	// Alerta resource.
+	// Alertmanager resource.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Default: {{ .Name }}
 	Resource string `mapstructure:"resource"`
 
-	// Alerta event.
+	// Alertmanager event.
 	// Can be a template and has access to the same data as the idInfo property.
 	// Default: {{ .ID }}
 	Event string `mapstructure:"event"`
 
-	// Alerta environment.
+	// Alertmanager environment.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Defaut is set from the configuration.
 	Environment string `mapstructure:"environment"`
 
-	// Alerta group.
+	// Alertmanager group.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Default: {{ .Group }}
 	Group string `mapstructure:"group"`
 
-	// Alerta value.
+	// Alertmanager value.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Default is an empty string.
 	Value string `mapstructure:"value"`
 
-	// Alerta origin.
+	// Alertmanager origin.
 	// If empty uses the origin from the configuration.
 	Origin string `mapstructure:"origin"`
 
 	// List of effected Services
 	Service []string `mapstructure:"service"`
 
-	// Alerta timeout.
+	// Alertmanager timeout.
 	// Default: 24h
 	Timeout time.Duration `mapstructure:"timeout"`
 }
@@ -306,7 +308,7 @@ func (s *Service) DefaultHandlerConfig() HandlerConfig {
 }
 
 func (s *Service) Handler(c HandlerConfig, ctx ...keyvalue.T) (alert.Handler, error) {
-	// Parse and validate alerta templates
+	// Parse and validate alertmanager templates
 	rtmpl, err := text.New("resource").Parse(c.Resource)
 	if err != nil {
 		return nil, err
@@ -447,8 +449,6 @@ func (h *handler) Handle(event alert.Event) {
 	}
 
 	if err := h.s.Alert(
-		h.c.Token,
-		h.c.TokenPrefix,
 		resource,
 		eventStr,
 		environment,
@@ -462,6 +462,6 @@ func (h *handler) Handle(event alert.Event) {
 		event.Data.Tags,
 		event.Data.Result,
 	); err != nil {
-		h.diag.Error("failed to send event to Alerta", err)
+		h.diag.Error("failed to send event to Alertmanager", err)
 	}
 }

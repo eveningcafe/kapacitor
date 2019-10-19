@@ -36,7 +36,7 @@ import (
 	"github.com/influxdata/kapacitor/models"
 	"github.com/influxdata/kapacitor/server"
 	"github.com/influxdata/kapacitor/services/alert/alerttest"
-	"github.com/influxdata/kapacitor/services/alerta/alertatest"
+	"github.com/influxdata/kapacitor/services/alertmanager/alertmanagertest"
 	"github.com/influxdata/kapacitor/services/hipchat/hipchattest"
 	"github.com/influxdata/kapacitor/services/httppost"
 	"github.com/influxdata/kapacitor/services/httppost/httpposttest"
@@ -6662,21 +6662,21 @@ func TestServer_UpdateConfig(t *testing.T) {
 			},
 		},
 		{
-			section: "alerta",
+			section: "alertmanager",
 			setDefaults: func(c *server.Config) {
-				c.Alerta.URL = "http://alerta.example.com"
+				c.Alerta.URL = "http://alertmanager.example.com"
 			},
 			expDefaultSection: client.ConfigSection{
-				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alerta"},
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager"},
 				Elements: []client.ConfigElement{{
-					Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alerta/"},
+					Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager/"},
 					Options: map[string]interface{}{
 						"enabled":              false,
 						"environment":          "",
 						"origin":               "",
 						"token":                false,
 						"token-prefix":         "",
-						"url":                  "http://alerta.example.com",
+						"url":                  "http://alertmanager.example.com",
 						"insecure-skip-verify": false,
 						"timeout":              "0s",
 					},
@@ -6686,14 +6686,14 @@ func TestServer_UpdateConfig(t *testing.T) {
 				},
 			},
 			expDefaultElement: client.ConfigElement{
-				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alerta/"},
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager/"},
 				Options: map[string]interface{}{
 					"enabled":              false,
 					"environment":          "",
 					"origin":               "",
 					"token":                false,
 					"token-prefix":         "",
-					"url":                  "http://alerta.example.com",
+					"url":                  "http://alertmanager.example.com",
 					"insecure-skip-verify": false,
 					"timeout":              "0s",
 				},
@@ -6711,16 +6711,16 @@ func TestServer_UpdateConfig(t *testing.T) {
 						},
 					},
 					expSection: client.ConfigSection{
-						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alerta"},
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager"},
 						Elements: []client.ConfigElement{{
-							Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alerta/"},
+							Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager/"},
 							Options: map[string]interface{}{
 								"enabled":              false,
 								"environment":          "",
 								"origin":               "kapacitor",
 								"token":                true,
 								"token-prefix":         "",
-								"url":                  "http://alerta.example.com",
+								"url":                  "http://alertmanager.example.com",
 								"insecure-skip-verify": false,
 								"timeout":              "3h0m0s",
 							},
@@ -6730,14 +6730,14 @@ func TestServer_UpdateConfig(t *testing.T) {
 						}},
 					},
 					expElement: client.ConfigElement{
-						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alerta/"},
+						Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager/"},
 						Options: map[string]interface{}{
 							"enabled":              false,
 							"environment":          "",
 							"origin":               "kapacitor",
 							"token":                true,
 							"token-prefix":         "",
-							"url":                  "http://alerta.example.com",
+							"url":                  "http://alertmanager.example.com",
 							"insecure-skip-verify": false,
 							"timeout":              "3h0m0s",
 						},
@@ -8616,8 +8616,8 @@ func TestServer_ListServiceTests(t *testing.T) {
 		Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/service-tests"},
 		Services: []client.ServiceTest{
 			{
-				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/service-tests/alerta"},
-				Name: "alerta",
+				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/service-tests/alertmanager"},
+				Name: "alertmanager",
 				Options: client.ServiceTestOptions{
 					"resource":    "testResource",
 					"event":       "testEvent",
@@ -8625,7 +8625,7 @@ func TestServer_ListServiceTests(t *testing.T) {
 					"severity":    "critical",
 					"group":       "testGroup",
 					"value":       "testValue",
-					"message":     "test alerta message",
+					"message":     "test alertmanager message",
 					"origin":      "",
 					"service": []interface{}{
 						"testServiceA",
@@ -9065,7 +9065,7 @@ func TestServer_DoServiceTest(t *testing.T) {
 		exp         client.ServiceTestResult
 	}{
 		{
-			service: "alerta",
+			service: "alertmanager",
 			options: client.ServiceTestOptions{},
 			exp: client.ServiceTestResult{
 				Success: false,
@@ -9483,7 +9483,7 @@ func TestServer_AlertHandlers(t *testing.T) {
 	}{
 		{
 			handler: client.TopicHandler{
-				Kind: "alerta",
+				Kind: "alertmanager",
 				Options: map[string]interface{}{
 					"token":        "testtoken1234567",
 					"token-prefix": "Bearer",
@@ -9494,7 +9494,7 @@ func TestServer_AlertHandlers(t *testing.T) {
 				},
 			},
 			setup: func(c *server.Config, ha *client.TopicHandler) (context.Context, error) {
-				ts := alertatest.NewServer()
+				ts := alertmanagertest.NewServer()
 				ctxt := context.WithValue(nil, "server", ts)
 
 				c.Alerta.Enabled = true
@@ -9502,13 +9502,13 @@ func TestServer_AlertHandlers(t *testing.T) {
 				return ctxt, nil
 			},
 			result: func(ctxt context.Context) error {
-				ts := ctxt.Value("server").(*alertatest.Server)
+				ts := ctxt.Value("server").(*alertmanagertest.Server)
 				ts.Close()
 				got := ts.Requests()
-				exp := []alertatest.Request{{
+				exp := []alertmanagertest.Request{{
 					URL:           "/alert",
 					Authorization: "Bearer testtoken1234567",
-					PostData: alertatest.PostData{
+					PostData: alertmanagertest.PostData{
 						Resource:    "alert",
 						Event:       "id",
 						Group:       "test",
@@ -9520,7 +9520,7 @@ func TestServer_AlertHandlers(t *testing.T) {
 					},
 				}}
 				if !reflect.DeepEqual(exp, got) {
-					return fmt.Errorf("unexpected alerta request:\nexp\n%+v\ngot\n%+v\n", exp, got)
+					return fmt.Errorf("unexpected alertmanager request:\nexp\n%+v\ngot\n%+v\n", exp, got)
 				}
 				return nil
 			},
