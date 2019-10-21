@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	defaultResource    = "{{ .Name }}"
-	defaultEvent       = "{{ .ID }}"
-	defaultGroup       = "{{ .Group }}"
-	defaultTimeout     = time.Duration(24 * time.Hour)
+	defaultResource = "{{ .Name }}"
+	defaultEvent    = "{{ .ID }}"
+	defaultGroup    = "{{ .Group }}"
+	defaultTimeout  = time.Duration(24 * time.Hour)
 )
 
 type Diagnostic interface {
@@ -62,9 +62,9 @@ type AlertmanagerRequest struct {
 		Customer    string   `json:"customer"`
 	} `json:"labels"`
 	Annotations struct {
-		Summary  string    `json:"summary"`
-		Value    time.Time `json:"value"`
-		Severity string    `json:"severity"`
+		Summary  string `json:"summary"`
+		Value    string `json:"value"`
+		Severity string `json:"severity"`
 	} `json:"annotations"`
 }
 
@@ -74,6 +74,7 @@ type testOptions struct {
 	Environment string   `json:"environment"`
 	Severity    string   `json:"severity"`
 	Group       string   `json:"group"`
+	Customer    string   `json:"customer"`
 	Value       string   `json:"value"`
 	Message     string   `json:"message"`
 	Origin      string   `json:"origin"`
@@ -103,12 +104,13 @@ func (s *Service) Test(options interface{}) error {
 		return fmt.Errorf("unexpected options type %T", options)
 	}
 	timeout, _ := time.ParseDuration(o.Timeout)
-	return s.Alert(
+	return s.Alert("firing",
 		o.Resource,
 		o.Event,
 		o.Environment,
 		o.Severity,
 		o.Group,
+		o.Customer,
 		o.Value,
 		o.Message,
 		o.Origin,
@@ -147,12 +149,12 @@ func (s *Service) Update(newConfig []interface{}) error {
 	return nil
 }
 
-func (s *Service) Alert(resource, event, environment, severity, group, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) error {
+func (s *Service) Alert(status, resource, event, environment, severity, group, customer, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) error {
 	if resource == "" || event == "" {
 		return errors.New("Resource and Event are required to send an alert")
 	}
 
-	req, err := s.preparePost(resource, event, environment, severity, group, value, message, origin, service, timeout, tags, data)
+	req, err := s.preparePost(status, resource, event, environment, severity, group, customer, value, message, origin, service, timeout, tags, data)
 	if err != nil {
 		return err
 	}
@@ -180,7 +182,7 @@ func (s *Service) Alert(resource, event, environment, severity, group, value, me
 	return nil
 }
 
-func (s *Service) preparePost( resource, event, environment, severity, group, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) (*http.Request, error) {
+func (s *Service) preparePost(status, resource, event, environment, severity, group, customer, value, message, origin string, service []string, timeout time.Duration, tags map[string]string, data models.Result) (*http.Request, error) {
 	c := s.config()
 
 	if !c.Enabled {
@@ -231,7 +233,20 @@ func (s *Service) preparePost( resource, event, environment, severity, group, va
 
 	//req, err := http.NewRequest("POST", u.String(), &post)
 	bodyData := AlertmanagerRequest{}
-	bodyData.Status
+
+	bodyData.Status = status
+	bodyData.Annotations.Severity = severity
+	bodyData.Annotations.Summary = message
+	bodyData.Annotations.Value = value
+
+	bodyData.Labels.Group = group
+	bodyData.Labels.Service = service
+	bodyData.Labels.Customer = customer
+	bodyData.Labels.Environment = environment
+	bodyData.Labels.Event = event
+	bodyData.Labels.Instance = resource
+	bodyData.Labels.Origin = origin
+
 	jsonBody, err := json.Marshal([]AlertmanagerRequest{bodyData})
 	if err != nil {
 		return nil, err
@@ -410,6 +425,14 @@ func (h *handler) Handle(event alert.Event) {
 	group := buf.String()
 	buf.Reset()
 
+	err = h.eventTmpl.Execute(&buf, data)
+	if err != nil {
+		h.diag.TemplateError(err, keyvalue.KV("customer", h.c.Event))
+		return
+	}
+	customer := buf.String()
+	buf.Reset()
+
 	err = h.valueTmpl.Execute(&buf, td)
 	if err != nil {
 		h.diag.TemplateError(err, keyvalue.KV("value", h.c.Value))
@@ -434,26 +457,33 @@ func (h *handler) Handle(event alert.Event) {
 	}
 
 	var severity string
-
+	var status string
 	switch event.State.Level {
 	case alert.OK:
 		severity = "ok"
+		status = "resolved"
 	case alert.Info:
 		severity = "informational"
+		status = "firing"
 	case alert.Warning:
 		severity = "warning"
+		status = "firing"
 	case alert.Critical:
 		severity = "critical"
+		status = "firing"
 	default:
 		severity = "indeterminate"
+		status = "firing"
 	}
 
 	if err := h.s.Alert(
+		status,
 		resource,
 		eventStr,
 		environment,
 		severity,
 		group,
+		customer,
 		value,
 		event.State.Message,
 		h.c.Origin,
