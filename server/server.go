@@ -757,11 +757,11 @@ func (s *Server) appendKafkaService() {
 }
 
 func (s *Server) appendAlertaService() {
-	c := s.config.Alerta
+	c := s.config.Alertmanager
 	d := s.DiagService.NewAlertaHandler()
 	srv := alertmanager.NewService(c, d)
 
-	s.TaskMaster.AlertaService = srv
+	s.TaskMaster.AlertManagerService = srv
 	s.AlertService.AlertaService = srv
 
 	s.SetDynamicService("alertmanager", srv)

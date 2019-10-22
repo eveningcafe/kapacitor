@@ -283,6 +283,11 @@ type HandlerConfig struct {
 	// Default: {{ .Group }}
 	Group string `mapstructure:"group"`
 
+	// Alertmanager group.
+	// Can be a template and has access to the same data as the AlertNode.Details property.
+	// Default: {{ .Group }}
+	Customer string `mapstructure:"customer"`
+
 	// Alertmanager value.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Default is an empty string.

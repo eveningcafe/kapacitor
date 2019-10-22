@@ -25,7 +25,9 @@ const defaultDetailsTmpl = "{{ json . }}"
 
 // AlertNode struct wraps the default AlertNodeData
 // tick:wraps:AlertNodeData
-type AlertNode struct{ *AlertNodeData }
+type AlertNode struct {
+	*AlertNodeData
+}
 
 // An AlertNode can trigger an event of varying severity levels,
 // and pass the event to alert handlers. The criteria for triggering
@@ -360,7 +362,7 @@ type AlertNodeData struct {
 
 	// Send alert to Alerta.
 	// tick:ignore
-	AlertaHandlers []*AlertaHandler `tick:"Alerta" json:"alerta"`
+	AlertManagerHandlers []*AlertManagerHandler `tick:"AlertManager" json:"alertmanager"`
 
 	// Send alert to OpsGenie
 	// tick:ignore
@@ -1188,21 +1190,17 @@ type HipChatHandler struct {
 //
 // NOTE: Alerta cannot be configured globally because of its required properties.
 // tick:property
-func (n *AlertNodeData) Alerta() *AlertaHandler {
-	alerta := &AlertaHandler{
+func (n *AlertNodeData) Alerta() *AlertManagerHandler {
+	alerta := &AlertManagerHandler{
 		AlertNodeData: n,
 	}
-	n.AlertaHandlers = append(n.AlertaHandlers, alerta)
+	n.AlertManagerHandlers = append(n.AlertManagerHandlers, alerta)
 	return alerta
 }
 
 // tick:embedded:AlertNode.Alerta
-type AlertaHandler struct {
+type AlertManagerHandler struct {
 	*AlertNodeData `json:"-"`
-
-	// Alerta authentication token.
-	// If empty uses the token from the configuration.
-	Token string `json:"token"`
 
 	// Alerta resource.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
@@ -1223,6 +1221,11 @@ type AlertaHandler struct {
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Default: {{ .Group }}
 	Group string `json:"group"`
+
+	// Alerta group.
+	// Can be a template and has access to the same data as the AlertNode.Details property.
+	// Default: {{ .Group }}
+	Customer string `json:"group"`
 
 	// Alerta value.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
@@ -1245,7 +1248,7 @@ type AlertaHandler struct {
 // List of effected services.
 // If not specified defaults to the Name of the stream.
 // tick:property
-func (a *AlertaHandler) Services(service ...string) *AlertaHandler {
+func (a *AlertManagerHandler) Services(service ...string) *AlertManagerHandler {
 	a.Service = service
 	return a
 }

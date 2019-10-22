@@ -344,12 +344,8 @@ func newAlertNode(et *ExecutingTask, n *pipeline.AlertNode, d NodeDiagnostic) (a
 		}
 		an.handlers = append(an.handlers, h)
 	}
-
-	for _, a := range n.AlertaHandlers {
-		c := et.tm.AlertaService.DefaultHandlerConfig()
-		if a.Token != "" {
-			c.Token = a.Token
-		}
+	for _, a := range n.AlertManagerHandlers {
+		c := et.tm.AlertManagerService.DefaultHandlerConfig()
 		if a.Resource != "" {
 			c.Resource = a.Resource
 		}
@@ -361,6 +357,9 @@ func newAlertNode(et *ExecutingTask, n *pipeline.AlertNode, d NodeDiagnostic) (a
 		}
 		if a.Group != "" {
 			c.Group = a.Group
+		}
+		if a.Customer != "" {
+			c.Customer = a.Customer
 		}
 		if a.Value != "" {
 			c.Value = a.Value
@@ -374,7 +373,7 @@ func newAlertNode(et *ExecutingTask, n *pipeline.AlertNode, d NodeDiagnostic) (a
 		if a.Timeout != 0 {
 			c.Timeout = a.Timeout
 		}
-		h, err := et.tm.AlertaService.Handler(c, ctx...)
+		h, err := et.tm.AlertManagerService.Handler(c, ctx...)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create Alerta handler")
 		}

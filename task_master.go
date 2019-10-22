@@ -170,7 +170,7 @@ type TaskMaster struct {
 	KafkaService interface {
 		Handler(kafka.HandlerConfig, ...keyvalue.T) (alert.Handler, error)
 	}
-	AlertaService interface {
+	AlertManagerService interface {
 		DefaultHandlerConfig() alertmanager.HandlerConfig
 		Handler(alertmanager.HandlerConfig, ...keyvalue.T) (alert.Handler, error)
 	}
@@ -283,7 +283,7 @@ func (tm *TaskMaster) New(id string) *TaskMaster {
 	n.TelegramService = tm.TelegramService
 	n.SNMPTrapService = tm.SNMPTrapService
 	n.HipChatService = tm.HipChatService
-	n.AlertaService = tm.AlertaService
+	n.AlertManagerService = tm.AlertManagerService
 	n.SensuService = tm.SensuService
 	n.TalkService = tm.TalkService
 	n.TimingService = tm.TimingService

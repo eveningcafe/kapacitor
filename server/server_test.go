@@ -6664,7 +6664,7 @@ func TestServer_UpdateConfig(t *testing.T) {
 		{
 			section: "alertmanager",
 			setDefaults: func(c *server.Config) {
-				c.Alerta.URL = "http://alertmanager.example.com"
+				c.Alertmanager.URL = "http://alertmanager.example.com"
 			},
 			expDefaultSection: client.ConfigSection{
 				Link: client.Link{Relation: client.Self, Href: "/kapacitor/v1/config/alertmanager"},
@@ -6674,8 +6674,6 @@ func TestServer_UpdateConfig(t *testing.T) {
 						"enabled":              false,
 						"environment":          "",
 						"origin":               "",
-						"token":                false,
-						"token-prefix":         "",
 						"url":                  "http://alertmanager.example.com",
 						"insecure-skip-verify": false,
 						"timeout":              "0s",
@@ -6691,21 +6689,15 @@ func TestServer_UpdateConfig(t *testing.T) {
 					"enabled":              false,
 					"environment":          "",
 					"origin":               "",
-					"token":                false,
-					"token-prefix":         "",
 					"url":                  "http://alertmanager.example.com",
 					"insecure-skip-verify": false,
 					"timeout":              "0s",
-				},
-				Redacted: []string{
-					"token",
 				},
 			},
 			updates: []updateAction{
 				{
 					updateAction: client.ConfigUpdateAction{
 						Set: map[string]interface{}{
-							"token":   "token",
 							"origin":  "kapacitor",
 							"timeout": "3h",
 						},
@@ -6718,8 +6710,6 @@ func TestServer_UpdateConfig(t *testing.T) {
 								"enabled":              false,
 								"environment":          "",
 								"origin":               "kapacitor",
-								"token":                true,
-								"token-prefix":         "",
 								"url":                  "http://alertmanager.example.com",
 								"insecure-skip-verify": false,
 								"timeout":              "3h0m0s",
@@ -6735,14 +6725,9 @@ func TestServer_UpdateConfig(t *testing.T) {
 							"enabled":              false,
 							"environment":          "",
 							"origin":               "kapacitor",
-							"token":                true,
-							"token-prefix":         "",
 							"url":                  "http://alertmanager.example.com",
 							"insecure-skip-verify": false,
 							"timeout":              "3h0m0s",
-						},
-						Redacted: []string{
-							"token",
 						},
 					},
 				},
@@ -9485,20 +9470,19 @@ func TestServer_AlertHandlers(t *testing.T) {
 			handler: client.TopicHandler{
 				Kind: "alertmanager",
 				Options: map[string]interface{}{
-					"token":        "testtoken1234567",
-					"token-prefix": "Bearer",
-					"origin":       "kapacitor",
-					"group":        "test",
-					"environment":  "env",
-					"timeout":      time.Duration(24 * time.Hour),
+					"origin":      "kapacitor",
+					"group":       "test",
+					"customer":    "vna",
+					"environment": "env",
+					"timeout":     time.Duration(24 * time.Hour),
 				},
 			},
 			setup: func(c *server.Config, ha *client.TopicHandler) (context.Context, error) {
 				ts := alertmanagertest.NewServer()
 				ctxt := context.WithValue(nil, "server", ts)
 
-				c.Alerta.Enabled = true
-				c.Alerta.URL = ts.URL
+				c.Alertmanager.Enabled = true
+				c.Alertmanager.URL = ts.URL
 				return ctxt, nil
 			},
 			result: func(ctxt context.Context) error {
@@ -9507,7 +9491,6 @@ func TestServer_AlertHandlers(t *testing.T) {
 				got := ts.Requests()
 				exp := []alertmanagertest.Request{{
 					URL:           "/alert",
-					Authorization: "Bearer testtoken1234567",
 					PostData: alertmanagertest.PostData{
 						Resource:    "alert",
 						Event:       "id",
@@ -9519,6 +9502,16 @@ func TestServer_AlertHandlers(t *testing.T) {
 						Timeout:     86400,
 					},
 				}}
+			//PostData: alertmanagertest.PostData{
+			//	Resource:    "alert",
+			//	Event:       "id",
+			//	Group:       "test",
+			//	Environment: "env",
+			//	Text:        "message",
+			//	Origin:      "kapacitor",
+			//	Service:     []string{"alert"},
+			//	Timeout:     86400,
+			//},
 				if !reflect.DeepEqual(exp, got) {
 					return fmt.Errorf("unexpected alertmanager request:\nexp\n%+v\ngot\n%+v\n", exp, got)
 				}
