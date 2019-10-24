@@ -51,21 +51,23 @@ func NewService(c Config, d Diagnostic) *Service {
 }
 
 type AlertmanagerRequest struct {
-	Status string `json:"status"`
-	Labels struct {
-		Instance    string   `json:"instance"`
-		Event       string   `json:"event"`
-		Environment string   `json:"environment"`
-		Origin      string   `json:"origin"`
-		Service     []string `json:"service"`
-		Group       string   `json:"group"`
-		Customer    string   `json:"customer"`
-	} `json:"labels"`
-	Annotations struct {
-		Summary  string `json:"summary"`
-		Value    string `json:"value"`
-		Severity string `json:"severity"`
-	} `json:"annotations"`
+	Status      string                  `json:"status"`
+	Labels      AlertmanagerLabels      `json:"labels"`
+	Annotations AlertmanagerAnnotations `json:"annotations"`
+}
+type AlertmanagerLabels struct {
+	Instance    string   `json:"instance"`
+	Event       string   `json:"event"`
+	Environment string   `json:"environment"`
+	Origin      string   `json:"origin"`
+	Service     []string `json:"service"`
+	Group       string   `json:"group"`
+	Customer    string   `json:"customer"`
+}
+type AlertmanagerAnnotations struct {
+	Summary  string `json:"summary"`
+	Value    string `json:"value"`
+	Severity string `json:"severity"`
 }
 
 type testOptions struct {
@@ -315,6 +317,7 @@ type handler struct {
 	environmentTmpl *text.Template
 	valueTmpl       *text.Template
 	groupTmpl       *text.Template
+	customerTmpl    *text.Template
 	serviceTmpl     []*text.Template
 }
 
@@ -345,6 +348,12 @@ func (s *Service) Handler(c HandlerConfig, ctx ...keyvalue.T) (alert.Handler, er
 	if err != nil {
 		return nil, err
 	}
+
+	ctmpl, err := text.New("customer").Parse(c.Customer)
+	if err != nil {
+		return nil, err
+	}
+
 	vtmpl, err := text.New("value").Parse(c.Value)
 	if err != nil {
 		return nil, err
@@ -367,6 +376,7 @@ func (s *Service) Handler(c HandlerConfig, ctx ...keyvalue.T) (alert.Handler, er
 		eventTmpl:       evtmpl,
 		environmentTmpl: etmpl,
 		groupTmpl:       gtmpl,
+		customerTmpl:    ctmpl,
 		valueTmpl:       vtmpl,
 		serviceTmpl:     stmpl,
 	}, nil
@@ -430,9 +440,9 @@ func (h *handler) Handle(event alert.Event) {
 	group := buf.String()
 	buf.Reset()
 
-	err = h.eventTmpl.Execute(&buf, data)
+	err = h.customerTmpl.Execute(&buf, td)
 	if err != nil {
-		h.diag.TemplateError(err, keyvalue.KV("customer", h.c.Event))
+		h.diag.TemplateError(err, keyvalue.KV("customer", h.c.Customer))
 		return
 	}
 	customer := buf.String()

@@ -226,7 +226,7 @@ func TestAlertTCPJSON(t *testing.T) {
         "slack": null,
         "telegram": null,
         "hipChat": null,
-        "alerta": null,
+        "alertmanager": null,
         "opsGenie": null,
         "opsGenie2": null,
         "talk": null
@@ -559,10 +559,9 @@ func TestAlertKafka(t *testing.T) {
 	PipelineTickTestHelper(t, pipe, want)
 }
 
-func TestAlertAlerta(t *testing.T) {
+func TestAlertAlertmanager(t *testing.T) {
 	pipe, _, from := StreamFrom()
-	handler := from.Alert().Alerta()
-	handler.Token = "ASSUMING DIRECT CONTROL"
+	handler := from.Alert().AlertManager()
 	handler.Resource = "Harbinger"
 	handler.Event = "Jump through Omega-4 Relay"
 	handler.Environment = "Collector base"

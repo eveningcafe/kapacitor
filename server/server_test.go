@@ -36,6 +36,7 @@ import (
 	"github.com/influxdata/kapacitor/models"
 	"github.com/influxdata/kapacitor/server"
 	"github.com/influxdata/kapacitor/services/alert/alerttest"
+	"github.com/influxdata/kapacitor/services/alertmanager"
 	"github.com/influxdata/kapacitor/services/alertmanager/alertmanagertest"
 	"github.com/influxdata/kapacitor/services/hipchat/hipchattest"
 	"github.com/influxdata/kapacitor/services/httppost"
@@ -6678,9 +6679,7 @@ func TestServer_UpdateConfig(t *testing.T) {
 						"insecure-skip-verify": false,
 						"timeout":              "0s",
 					},
-					Redacted: []string{
-						"token",
-					}},
+					},
 				},
 			},
 			expDefaultElement: client.ConfigElement{
@@ -9489,29 +9488,27 @@ func TestServer_AlertHandlers(t *testing.T) {
 				ts := ctxt.Value("server").(*alertmanagertest.Server)
 				ts.Close()
 				got := ts.Requests()
+				ar := alertmanager.AlertmanagerRequest{
+					Status:      "firing",
+					Labels:      alertmanager.AlertmanagerLabels{Instance: "alert", Event: "id", Environment: "env", Origin: "kapacitor", Service: []string{"alert"}, Group: "test", Customer: "vna"},
+					Annotations: alertmanager.AlertmanagerAnnotations{Value:"",Summary:"message", Severity: "critical"},
+				};
 				exp := []alertmanagertest.Request{{
-					URL:           "/alert",
+					URL: "/alert",
 					PostData: alertmanagertest.PostData{
-						Resource:    "alert",
-						Event:       "id",
-						Group:       "test",
-						Environment: "env",
-						Text:        "message",
-						Origin:      "kapacitor",
-						Service:     []string{"alert"},
-						Timeout:     86400,
+						ar,
 					},
 				}}
-			//PostData: alertmanagertest.PostData{
-			//	Resource:    "alert",
-			//	Event:       "id",
-			//	Group:       "test",
-			//	Environment: "env",
-			//	Text:        "message",
-			//	Origin:      "kapacitor",
-			//	Service:     []string{"alert"},
-			//	Timeout:     86400,
-			//},
+				//PostData: alertmanagertest.PostData{
+				//	Resource:    "alert",
+				//	Event:       "id",
+				//	Group:       "test",
+				//	Environment: "env",
+				//	Text:        "message",
+				//	Origin:      "kapacitor",
+				//	Service:     []string{"alert"},
+				//	Timeout:     86400,
+				//},
 				if !reflect.DeepEqual(exp, got) {
 					return fmt.Errorf("unexpected alertmanager request:\nexp\n%+v\ngot\n%+v\n", exp, got)
 				}

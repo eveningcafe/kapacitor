@@ -186,9 +186,8 @@ func (n *AlertNode) Build(a *pipeline.AlertNode) (ast.Node, error) {
 			Dot("template", h.Template)
 	}
 
-	for _, h := range a.AlertaHandlers {
-		n.Dot("alerta").
-			Dot("token", h.Token).
+	for _, h := range a.AlertManagerHandlers {
+		n.Dot("alertmanager").
 			Dot("resource", h.Resource).
 			Dot("event", h.Event).
 			Dot("environment", h.Environment).

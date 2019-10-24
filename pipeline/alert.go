@@ -1153,13 +1153,12 @@ type HipChatHandler struct {
 	Token string `json:"token"`
 }
 
-// Send the alert to Alerta.
+// Send the alert to Alertmanager.
 //
 // Example:
-//    [alerta]
+//    [alertmanager]
 //      enabled = true
-//      url = "https://alerta.yourdomain"
-//      token = "9hiWoDOZ9IbmHsOTeST123ABciWTIqXQVFDo63h9"
+//      url = "https://alertmanager.yourdomain"
 //      environment = "Production"
 //      origin = "Kapacitor"
 //
@@ -1190,19 +1189,19 @@ type HipChatHandler struct {
 //
 // NOTE: Alerta cannot be configured globally because of its required properties.
 // tick:property
-func (n *AlertNodeData) Alerta() *AlertManagerHandler {
-	alerta := &AlertManagerHandler{
+func (n *AlertNodeData) AlertManager() *AlertManagerHandler {
+	alertmanager := &AlertManagerHandler{
 		AlertNodeData: n,
 	}
-	n.AlertManagerHandlers = append(n.AlertManagerHandlers, alerta)
-	return alerta
+	n.AlertManagerHandlers = append(n.AlertManagerHandlers, alertmanager)
+	return alertmanager
 }
 
 // tick:embedded:AlertNode.Alerta
 type AlertManagerHandler struct {
 	*AlertNodeData `json:"-"`
 
-	// Alerta resource.
+	// Alertmanager resource.
 	// Can be a template and has access to the same data as the AlertNode.Details property.
 	// Default: {{ .Name }}
 	Resource string `json:"resource"`

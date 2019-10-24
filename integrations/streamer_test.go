@@ -36,8 +36,6 @@ import (
 	"github.com/influxdata/kapacitor/models"
 	alertservice "github.com/influxdata/kapacitor/services/alert"
 	"github.com/influxdata/kapacitor/services/alert/alerttest"
-	"github.com/influxdata/kapacitor/services/alerta"
-	"github.com/influxdata/kapacitor/services/alerta/alertatest"
 	"github.com/influxdata/kapacitor/services/diagnostic"
 	"github.com/influxdata/kapacitor/services/hipchat"
 	"github.com/influxdata/kapacitor/services/hipchat/hipchattest"
@@ -8884,92 +8882,92 @@ stream
 	}
 }
 
-func TestStream_AlertAlerta(t *testing.T) {
-	ts := alertatest.NewServer()
-	defer ts.Close()
-
-	var script = `
-stream
-	|from()
-		.measurement('cpu')
-		.where(lambda: "host" == 'serverA')
-		.groupBy('host')
-	|window()
-		.period(10s)
-		.every(10s)
-	|count('value')
-	|alert()
-		.id('{{ index .Tags "host" }}')
-		.message('kapacitor/{{ .Name }}/{{ index .Tags "host" }} is {{ .Level }} @{{.Time}}')
-		.info(lambda: "count" > 6.0)
-		.warn(lambda: "count" > 7.0)
-		.crit(lambda: "count" > 8.0)
-		.alerta()
-			.token('testtoken1234567')
-			.environment('production')
-			.timeout(1h)
-		.alerta()
-			.token('anothertesttoken')
-			.resource('resource: {{ index .Tags "host" }}')
-			.event('event: {{ .TaskName }}')
-			.environment('{{ index .Tags "host" }}')
-			.origin('override')
-			.group('{{ .ID }}')
-			.value('{{ index .Fields "count" }}')
-			.services('serviceA', 'serviceB', '{{ .Name }}')
-`
-	tmInit := func(tm *kapacitor.TaskMaster) {
-		c := alerta.NewConfig()
-		c.Enabled = true
-		c.URL = ts.URL
-		c.Origin = "Kapacitor"
-		sl := alerta.NewService(c, diagService.NewAlertaHandler())
-		tm.AlertaService = sl
-	}
-	testStreamerNoOutput(t, "TestStream_Alert", script, 13*time.Second, tmInit)
-
-	exp := []interface{}{
-		alertatest.Request{
-			URL:           "/alert",
-			Authorization: "Bearer testtoken1234567",
-			PostData: alertatest.PostData{
-				Resource:    "cpu",
-				Event:       "serverA",
-				Group:       "host=serverA",
-				Environment: "production",
-				Text:        "kapacitor/cpu/serverA is CRITICAL @1971-01-01 00:00:10 +0000 UTC",
-				Origin:      "Kapacitor",
-				Service:     []string{"cpu"},
-				Timeout:     3600,
-			},
-		},
-		alertatest.Request{
-			URL:           "/alert",
-			Authorization: "Bearer anothertesttoken",
-			PostData: alertatest.PostData{
-				Resource:    "resource: serverA",
-				Event:       "event: TestStream_Alert",
-				Group:       "serverA",
-				Environment: "serverA",
-				Text:        "kapacitor/cpu/serverA is CRITICAL @1971-01-01 00:00:10 +0000 UTC",
-				Origin:      "override",
-				Service:     []string{"serviceA", "serviceB", "cpu"},
-				Value:       "10",
-				Timeout:     86400,
-			},
-		},
-	}
-
-	ts.Close()
-	var got []interface{}
-	for _, g := range ts.Requests() {
-		got = append(got, g)
-	}
-
-	if err := compareListIgnoreOrder(got, exp, nil); err != nil {
-		t.Error(err)
-	}
-}
+//func TestStream_AlertAlerta(t *testing.T) {
+//	ts := alertmanager.NewServer()
+//	defer ts.Close()
+//
+//	var script = `
+//stream
+//	|from()
+//		.measurement('cpu')
+//		.where(lambda: "host" == 'serverA')
+//		.groupBy('host')
+//	|window()
+//		.period(10s)
+//		.every(10s)
+//	|count('value')
+//	|alert()
+//		.id('{{ index .Tags "host" }}')
+//		.message('kapacitor/{{ .Name }}/{{ index .Tags "host" }} is {{ .Level }} @{{.Time}}')
+//		.info(lambda: "count" > 6.0)
+//		.warn(lambda: "count" > 7.0)
+//		.crit(lambda: "count" > 8.0)
+//		.alerta()
+//			.token('testtoken1234567')
+//			.environment('production')
+//			.timeout(1h)
+//		.alerta()
+//			.token('anothertesttoken')
+//			.resource('resource: {{ index .Tags "host" }}')
+//			.event('event: {{ .TaskName }}')
+//			.environment('{{ index .Tags "host" }}')
+//			.origin('override')
+//			.group('{{ .ID }}')
+//			.value('{{ index .Fields "count" }}')
+//			.services('serviceA', 'serviceB', '{{ .Name }}')
+//`
+//	tmInit := func(tm *kapacitor.TaskMaster) {
+//		c := alerta.NewConfig()
+//		c.Enabled = true
+//		c.URL = ts.URL
+//		c.Origin = "Kapacitor"
+//		sl := alerta.NewService(c, diagService.NewAlertaHandler())
+//		tm.AlertaService = sl
+//	}
+//	testStreamerNoOutput(t, "TestStream_Alert", script, 13*time.Second, tmInit)
+//
+//	exp := []interface{}{
+//		alertatest.Request{
+//			URL:           "/alert",
+//			Authorization: "Bearer testtoken1234567",
+//			PostData: alertatest.PostData{
+//				Resource:    "cpu",
+//				Event:       "serverA",
+//				Group:       "host=serverA",
+//				Environment: "production",
+//				Text:        "kapacitor/cpu/serverA is CRITICAL @1971-01-01 00:00:10 +0000 UTC",
+//				Origin:      "Kapacitor",
+//				Service:     []string{"cpu"},
+//				Timeout:     3600,
+//			},
+//		},
+//		alertatest.Request{
+//			URL:           "/alert",
+//			Authorization: "Bearer anothertesttoken",
+//			PostData: alertatest.PostData{
+//				Resource:    "resource: serverA",
+//				Event:       "event: TestStream_Alert",
+//				Group:       "serverA",
+//				Environment: "serverA",
+//				Text:        "kapacitor/cpu/serverA is CRITICAL @1971-01-01 00:00:10 +0000 UTC",
+//				Origin:      "override",
+//				Service:     []string{"serviceA", "serviceB", "cpu"},
+//				Value:       "10",
+//				Timeout:     86400,
+//			},
+//		},
+//	}
+//
+//	ts.Close()
+//	var got []interface{}
+//	for _, g := range ts.Requests() {
+//		got = append(got, g)
+//	}
+//
+//	if err := compareListIgnoreOrder(got, exp, nil); err != nil {
+//		t.Error(err)
+//	}
+//}
 
 func TestStream_AlertPushover(t *testing.T) {
 	ts := pushovertest.NewServer()
