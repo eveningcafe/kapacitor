@@ -239,7 +239,7 @@ func New(c *Config, buildInfo BuildInfo, diagService *diagnostic.Service) (*Serv
 	}
 
 	// Append Alert integration services
-	s.appendAlertaService()
+	s.appendAlertManagerService()
 	s.appendHipChatService()
 	s.appendKafkaService()
 	if err := s.appendMQTTService(); err != nil {
@@ -756,7 +756,7 @@ func (s *Server) appendKafkaService() {
 	s.AppendService("kafka", srv)
 }
 
-func (s *Server) appendAlertaService() {
+func (s *Server) appendAlertManagerService() {
 	c := s.config.Alertmanager
 	d := s.DiagService.NewAlertaHandler()
 	srv := alertmanager.NewService(c, d)
