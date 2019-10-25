@@ -566,6 +566,7 @@ func TestAlertAlertmanager(t *testing.T) {
 	handler.Event = "Jump through Omega-4 Relay"
 	handler.Environment = "Collector base"
 	handler.Group = "I brought Jack, Miranda and Tali"
+	handler.Customer = "nani?"
 	handler.Value = "Save the Galaxy"
 	handler.Origin = "Omega"
 	handler.Services("legion", "vent", "garrus", "distraction team", "grunt", "crew", "samara", "barrier")
@@ -583,6 +584,7 @@ func TestAlertAlertmanager(t *testing.T) {
         .event('Jump through Omega-4 Relay')
         .environment('Collector base')
         .group('I brought Jack, Miranda and Tali')
+        .customer('nani?')
         .value('Save the Galaxy')
         .origin('Omega')
         .services('legion', 'vent', 'garrus', 'distraction team', 'grunt', 'crew', 'samara', 'barrier')

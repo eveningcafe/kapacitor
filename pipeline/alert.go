@@ -46,7 +46,7 @@ type AlertNode struct {
 //    * email -- Send and email with alert data.
 //    * exec -- Execute a command passing alert data over STDIN.
 //    * HipChat -- Post alert message to HipChat room.
-//    * Alerta -- Post alert message to Alerta.
+//    * Alertmanager -- Post alert message to Alertmanager.
 //    * Sensu -- Post alert message to Sensu client.
 //    * Slack -- Post alert message to Slack channel.
 //    * SNMPTraps -- Trigger SNMP traps.
@@ -360,7 +360,7 @@ type AlertNodeData struct {
 	// tick:ignore
 	HipChatHandlers []*HipChatHandler `tick:"HipChat" json:"hipChat"`
 
-	// Send alert to Alerta.
+	// Send alert to Alertmanager.
 	// tick:ignore
 	AlertManagerHandlers []*AlertManagerHandler `tick:"AlertManager" json:"alertmanager"`
 

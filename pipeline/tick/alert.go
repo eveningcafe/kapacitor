@@ -192,6 +192,7 @@ func (n *AlertNode) Build(a *pipeline.AlertNode) (ast.Node, error) {
 			Dot("event", h.Event).
 			Dot("environment", h.Environment).
 			Dot("group", h.Group).
+			Dot("customer", h.Customer).
 			Dot("value", h.Value).
 			Dot("origin", h.Origin).
 			Dot("services", args(h.Service)...).

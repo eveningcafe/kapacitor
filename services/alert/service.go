@@ -80,7 +80,7 @@ type Service struct {
 
 	diag Diagnostic
 
-	AlertaService interface {
+	AlertManagerService interface {
 		DefaultHandlerConfig() alertmanager.HandlerConfig
 		Handler(alertmanager.HandlerConfig, ...keyvalue.T) (alert.Handler, error)
 	}
@@ -767,12 +767,12 @@ func (s *Service) createHandlerFromSpec(spec HandlerSpec) (handler, error) {
 			return handler{}, err
 		}
 	case "alertmanager":
-		c := s.AlertaService.DefaultHandlerConfig()
+		c := s.AlertManagerService.DefaultHandlerConfig()
 		err = decodeOptions(spec.Options, &c)
 		if err != nil {
 			return handler{}, err
 		}
-		h, err = s.AlertaService.Handler(c, ctx...)
+		h, err = s.AlertManagerService.Handler(c, ctx...)
 		if err != nil {
 			return handler{}, err
 		}
